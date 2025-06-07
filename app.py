@@ -154,20 +154,35 @@ for i, col in enumerate(card_backs_cols_2):
 # --- Card Drawing Logic ---
 if chosen_card_index != -1:
     with st.spinner("Drawing from the deck..."):
-        time.sleep(1.5)
+        time.sleep(1.0)
 
     seed_index = chosen_card_index
 
     # --- Single Card Reading ---
     if reading_type == "Single Card Draw":
+        placeholder = st.empty()  # Create an empty container for the animation
+
+        # 1. Show the card back
+        with placeholder.container(border=True):
+            st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
+
+        time.sleep(4)  # Pause on the card back for 4 full seconds
+
+        # 2. "Flip" the card by replacing the placeholder's content
         drawn_card = st.session_state.deck[seed_index]
         is_reversed = random.choice([True, False])  # Restore 50/50 chance
-        if is_reversed:
-            display_card(drawn_card, header="Your Card (Reversed)")
-            st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
-        else:
-            display_card(drawn_card)
-            st.info(f"**Meaning:** {drawn_card['meaning']}")
+        with placeholder.container(border=True):
+            if is_reversed:
+                st.header("Your Card (Reversed)", anchor=False, divider="rainbow")
+                st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align: center;'>{drawn_card['title']}</h2>", unsafe_allow_html=True)
+                st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
+            else:
+                st.header("Your Card", anchor=False, divider="rainbow")
+                st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align: center;'>{drawn_card['title']}</h2>", unsafe_allow_html=True)
+                st.info(f"**Meaning:** {drawn_card['meaning']}")
 
     # --- 3-Card Reading ---
     elif reading_type == "3-Card Career Reading":
