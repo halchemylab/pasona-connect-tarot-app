@@ -78,19 +78,20 @@ def initialize_deck():
 # --- UI Helper Functions ---
 def display_card(card, header="Your Card"):
     """Displays a single card in a formatted, centered layout."""
-    st.header(header, anchor=False, divider="rainbow")
-    st.markdown(
-        f"<p style='text-align: center; font-size: 80px;'>{card['emoji']}</p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"<h2 style='text-align: center;'>{card['title']}</h2>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"<p style='text-align: center; font-style: italic; font-size: 18px;'>{card['meaning']}</p>",
-        unsafe_allow_html=True,
-    )
+    with st.container(border=True):
+        st.header(header, anchor=False, divider="rainbow")
+        st.markdown(
+            f"<p style='text-align: center; font-size: 80px;'>{card['emoji']}</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h2 style='text-align: center;'>{card['title']}</h2>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<p style='text-align: center; font-style: italic; font-size: 18px;'>{card['meaning']}</p>",
+            unsafe_allow_html=True,
+        )
 
 # --- Main App ---
 
