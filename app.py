@@ -17,51 +17,61 @@ INITIAL_DECK = [
         "title": "The Innovator",
         "emoji": "💡",
         "meaning": "A brilliant new idea will energize your work. Trust your sudden insights.",
+        "reversed_meaning": "You're experiencing creative block. Step away and seek new inspiration."
     },
     {
         "title": "The Collaborator",
         "emoji": "🤝",
         "meaning": "Your greatest success this week will come from teamwork. Reach out and connect.",
+        "reversed_meaning": "Teamwork is faltering. Address miscommunication or try working solo for a bit."
     },
     {
         "title": "The Focus Master",
         "emoji": "🎯",
         "meaning": "Eliminate distractions. Deep, focused work on a single task will yield great results.",
+        "reversed_meaning": "Scattered attention is holding you back. Reassess your priorities."
     },
     {
         "title": "The Communicator",
         "emoji": "📣",
         "meaning": "Speak up. Your voice needs to be heard in an important meeting or discussion.",
+        "reversed_meaning": "Misunderstandings may arise. Listen carefully and clarify your message."
     },
     {
         "title": "The Restful Achiever",
         "emoji": "🧘",
         "meaning": "Don't confuse activity with progress. Take a break; your best work will follow.",
+        "reversed_meaning": "Restlessness or burnout is near. Prioritize self-care and boundaries."
     },
     {
         "title": "The Bold Leader",
         "emoji": "🦁",
         "meaning": "An opportunity to lead or take ownership of a project will present itself. Seize it.",
+        "reversed_meaning": "Overconfidence or reluctance to lead may cause setbacks. Reflect before acting."
     },
     {
         "title": "The Student",
         "emoji": "📚",
         "meaning": "A skill you need to learn is holding you back. Dedicate time to learning it.",
+        "reversed_meaning": "Avoiding growth or ignoring feedback will stall your progress."
     },
     {
         "title": "The Finisher",
         "emoji": "🏁",
         "meaning": "Stop starting and start finishing. Push that lingering project across the finish line.",
+        "reversed_meaning": "Procrastination or perfectionism is blocking completion. Let go and finish."
     },
     {
         "title": "The Networker",
         "emoji": "🌐",
         "meaning": "The solution to your problem lies with someone you haven't met yet. Expand your network.",
+        "reversed_meaning": "Networking efforts may feel forced or unproductive. Focus on genuine connections."
     },
     {
         "title": "The Organizer",
         "emoji": "🧹",
         "meaning": "Clarity comes from order. Tidy your workspace, organize your files, and plan your week.",
+        "reversed_meaning": "Disorganization is causing confusion. Take time to restore order."
     },
 ]
 
@@ -86,10 +96,6 @@ def display_card(card, header="Your Card"):
         )
         st.markdown(
             f"<h2 style='text-align: center;'>{card['title']}</h2>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<p style='text-align: center; font-style: italic; font-size: 18px;'>{card['meaning']}</p>",
             unsafe_allow_html=True,
         )
 
@@ -155,7 +161,13 @@ if chosen_card_index != -1:
     # --- Single Card Reading ---
     if reading_type == "Single Card Draw":
         drawn_card = st.session_state.deck[seed_index]
-        display_card(drawn_card)
+        is_reversed = random.choice([True, False])  # Restore 50/50 chance
+        if is_reversed:
+            display_card(drawn_card, header="Your Card (Reversed)")
+            st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
+        else:
+            display_card(drawn_card)
+            st.info(f"**Meaning:** {drawn_card['meaning']}")
 
     # --- 3-Card Reading ---
     elif reading_type == "3-Card Career Reading":
@@ -169,23 +181,37 @@ if chosen_card_index != -1:
         card2 = st.session_state.deck[card2_index]
         card3 = st.session_state.deck[card3_index]
 
+        # Decide reversed state for each card
+        reversed1 = random.choice([True, False])
+        reversed2 = random.choice([True, False])
+        reversed3 = random.choice([True, False])
+
         # Bonus: Use st.columns for a clean side-by-side layout
         col1, col2, col3 = st.columns(3)
 
         with col1:
             st.markdown("<h4 style='text-align: center;'>Past Influence</h4>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card1['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card1['title']}</h5>", unsafe_allow_html=True)
-            st.write(card1['meaning'])
+            st.markdown(f"<h5 style='text-align: center;'>{card1['title']}{' (Reversed)' if reversed1 else ''}</h5>", unsafe_allow_html=True)
+            if reversed1:
+                st.info(f"**Reversed Meaning:** {card1['reversed_meaning']}")
+            else:
+                st.info(f"**Meaning:** {card1['meaning']}")
 
         with col2:
             st.markdown("<h4 style='text-align: center;'>Present Focus</h4>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card2['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card2['title']}</h5>", unsafe_allow_html=True)
-            st.write(card2['meaning'])
+            st.markdown(f"<h5 style='text-align: center;'>{card2['title']}{' (Reversed)' if reversed2 else ''}</h5>", unsafe_allow_html=True)
+            if reversed2:
+                st.info(f"**Reversed Meaning:** {card2['reversed_meaning']}")
+            else:
+                st.info(f"**Meaning:** {card2['meaning']}")
 
         with col3:
             st.markdown("<h4 style='text-align: center;'>Future Potential</h4>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card3['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card3['title']}</h5>", unsafe_allow_html=True)
-            st.write(card3['meaning'])
+            st.markdown(f"<h5 style='text-align: center;'>{card3['title']}{' (Reversed)' if reversed3 else ''}</h5>", unsafe_allow_html=True)
+            if reversed3:
+                st.info(f"**Reversed Meaning:** {card3['reversed_meaning']}")
+            else:
+                st.info(f"**Meaning:** {card3['meaning']}")
