@@ -127,37 +127,39 @@ with st.sidebar:
     )
 
 # --- Main Interaction Area ---
-st.subheader("Pick Your Number", anchor=False)
-selected_number = st.number_input(
-    "Enter a number between 1 and 10:",
-    min_value=1,
-    max_value=10,
-    value=None, # no default value
-    placeholder="Type your number...",
-    label_visibility="collapsed"
-)
+st.subheader("Click a Card to Draw Your Reading", anchor=False)
+
+# Create 10 "card backs" in two rows of five
+card_backs_cols = st.columns(5)
+chosen_card_index = -1
+card_back_design = "🎴"
+
+for i, col in enumerate(card_backs_cols):
+    with col:
+        if st.button(card_back_design, key=f"card_{i}", use_container_width=True):
+            chosen_card_index = i
+
+card_backs_cols_2 = st.columns(5)
+for i, col in enumerate(card_backs_cols_2):
+    with col:
+        if st.button(card_back_design, key=f"card_{i+5}", use_container_width=True):
+            chosen_card_index = i + 5
 
 # --- Card Drawing Logic ---
-if st.button("Draw Your Card(s)!", type="primary", use_container_width=True, disabled=(selected_number is None)):
-    
-    # Using the selected number to create a deterministic "seed" index
-    # Subtract 1 for zero-based list indexing
-    seed_index = selected_number - 1
-
-    # Bonus: Use a spinner for a little dramatic flair
+if chosen_card_index != -1:
     with st.spinner("Drawing from the deck..."):
-        time.sleep(1.5) # Simulate the drawing process
+        time.sleep(1.5)
+
+    seed_index = chosen_card_index
 
     # --- Single Card Reading ---
     if reading_type == "Single Card Draw":
-        # The same number will always draw the same card from the *current* shuffle
         drawn_card = st.session_state.deck[seed_index]
         display_card(drawn_card)
 
     # --- 3-Card Reading ---
     elif reading_type == "3-Card Career Reading":
         st.header("Your Career Reading", anchor=False, divider="rainbow")
-        
         # Draw 3 cards sequentially from the seeded position, wrapping around if needed
         card1_index = seed_index
         card2_index = (seed_index + 1) % 10 # Modulo for wrapping around the deck
