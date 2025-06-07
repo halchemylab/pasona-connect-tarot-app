@@ -184,6 +184,11 @@ if chosen_card_index != -1:
                 st.markdown(f"<h2 style='text-align: center;'>{drawn_card['title']}</h2>", unsafe_allow_html=True)
                 st.info(f"**Meaning:** {drawn_card['meaning']}")
 
+        # --- Share to Teams Button ---
+        st.divider()
+        reading_text = f"""🔮 My Pasona Tarot Reading:\n**{drawn_card['title']}** {drawn_card['emoji']}\n*_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*\n"""
+        st.text_area("Copy this to share your reading!", reading_text, height=150)
+
     # --- 3-Card Reading ---
     elif reading_type == "3-Card Career Reading":
         st.header("Your Career Reading", anchor=False, divider="rainbow")
