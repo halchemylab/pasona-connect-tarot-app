@@ -142,15 +142,19 @@ card_back_design = "🎴"
 if "chosen_card_index" not in st.session_state:
     st.session_state.chosen_card_index = -1
 
+# First row (cards 1-5)
 for i, col in enumerate(card_backs_cols):
     with col:
-        if st.button(card_back_design, key=f"card_{i}", use_container_width=True):
+        card_number = i + 1
+        if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i}", use_container_width=True):
             st.session_state.chosen_card_index = i
 
+# Second row (cards 6-10)
 card_backs_cols_2 = st.columns(5)
 for i, col in enumerate(card_backs_cols_2):
     with col:
-        if st.button(card_back_design, key=f"card_{i+5}", use_container_width=True):
+        card_number = i + 6
+        if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i+5}", use_container_width=True):
             st.session_state.chosen_card_index = i + 5
 
 # --- Card Drawing Logic ---
@@ -174,16 +178,17 @@ if st.session_state.chosen_card_index != -1:
         # 2. "Flip" the card by replacing the placeholder's content
         drawn_card = st.session_state.deck[seed_index]
         is_reversed = random.choice([True, False])  # Restore 50/50 chance
+        card_number = seed_index + 1
         with placeholder.container(border=True):
             if is_reversed:
-                st.header("Your Card (Reversed)", anchor=False, divider="rainbow")
+                st.header(f"Your Card (Reversed) — #{card_number}", anchor=False, divider="rainbow")
                 st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h2 style='text-align: center;'>{drawn_card['title']}</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                 st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
             else:
-                st.header("Your Card", anchor=False, divider="rainbow")
+                st.header(f"Your Card — #{card_number}", anchor=False, divider="rainbow")
                 st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h2 style='text-align: center;'>{drawn_card['title']}</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                 st.info(f"**Meaning:** {drawn_card['meaning']}")
 
         # --- Share to Teams Button ---
