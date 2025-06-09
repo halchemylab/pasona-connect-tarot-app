@@ -135,28 +135,30 @@ with st.sidebar:
 # --- Main Interaction Area ---
 st.subheader("Click a Card to Draw Your Reading", anchor=False)
 
-# Create 10 "card backs" in two rows of five
 card_backs_cols = st.columns(5)
-chosen_card_index = -1
 card_back_design = "🎴"
+
+# Use session_state to persist chosen card index
+if "chosen_card_index" not in st.session_state:
+    st.session_state.chosen_card_index = -1
 
 for i, col in enumerate(card_backs_cols):
     with col:
         if st.button(card_back_design, key=f"card_{i}", use_container_width=True):
-            chosen_card_index = i
+            st.session_state.chosen_card_index = i
 
 card_backs_cols_2 = st.columns(5)
 for i, col in enumerate(card_backs_cols_2):
     with col:
         if st.button(card_back_design, key=f"card_{i+5}", use_container_width=True):
-            chosen_card_index = i + 5
+            st.session_state.chosen_card_index = i + 5
 
 # --- Card Drawing Logic ---
-if chosen_card_index != -1:
+if st.session_state.chosen_card_index != -1:
     with st.spinner("Drawing from the deck..."):
         time.sleep(1.0)
 
-    seed_index = chosen_card_index
+    seed_index = st.session_state.chosen_card_index
 
     # --- Single Card Reading ---
     if reading_type == "Single Card Draw":
@@ -187,7 +189,20 @@ if chosen_card_index != -1:
         # --- Share to Teams Button ---
         st.divider()
         reading_text = f"""🔮 My Pasona Tarot Reading:\n**{drawn_card['title']}** {drawn_card['emoji']}\n*_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*\n"""
-        st.text_area("Copy this to share your reading!", reading_text, height=150)
+        # Make the share section hidable with persistent state
+        if "show_share" not in st.session_state:
+            st.session_state.show_share = False
+        if "last_share_btn" not in st.session_state:
+            st.session_state.last_share_btn = False
+        share_btn = st.button(
+            "Show shareable reading text" if not st.session_state.show_share else "Hide shareable reading text",
+            key="toggle_share_btn"
+        )
+        if share_btn and not st.session_state.last_share_btn:
+            st.session_state.show_share = not st.session_state.show_share
+        st.session_state.last_share_btn = share_btn
+        if st.session_state.show_share:
+            st.text_area("Copy this to share your reading!", reading_text, height=150)
 
     # --- 3-Card Reading ---
     elif reading_type == "3-Card Career Reading":
