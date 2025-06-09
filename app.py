@@ -5,7 +5,7 @@ import copy
 
 # --- App Configuration ---
 st.set_page_config(
-    page_title="Pasona Tarot for Work",
+    page_title="Pasona Connect Tarot App Demo",
     page_icon="🔮",
     layout="centered",
 )
@@ -105,7 +105,7 @@ def display_card(card, header="Your Card"):
 initialize_deck()
 
 # --- Title and Introduction ---
-st.title("🔮 Pasona Tarot for Work")
+st.title("🔮 Pasona Connect Tarot Demo App")
 st.markdown(
     "Get a little dose of fun, lighthearted career advice. "
     "Pick a number from 1 to 10 to draw your card for the day."
