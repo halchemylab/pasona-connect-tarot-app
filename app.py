@@ -122,7 +122,11 @@ with st.sidebar:
         shuffled_deck = copy.deepcopy(INITIAL_DECK)
         random.shuffle(shuffled_deck)
         st.session_state.deck = shuffled_deck
-        st.success("The deck has been shuffled!")
+        # Reset all relevant session state variables for a true app reset
+        st.session_state.chosen_card_index = -1
+        st.session_state.show_share = False
+        st.session_state.last_share_btn = False
+        st.success("The deck has been shuffled and the app has been reset!")
         time.sleep(1) # a little pause to let the user see the message
         st.rerun()
 
