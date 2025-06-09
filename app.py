@@ -105,9 +105,10 @@ def display_card(card, header="Your Card"):
 initialize_deck()
 
 # --- Title and Introduction ---
-st.title("🔮 Pasona Connect Tarot Demo App")
+st.title("🌌 Pasona Connect Tarot Demo App")
 st.markdown(
     "Get a little dose of fun, lighthearted career advice. "
+    "Designed specifically for Pasona Connect! "
     "Pick a number from 1 to 10 to draw your card for the day."
 )
 st.divider()
@@ -174,6 +175,7 @@ if st.session_state.chosen_card_index != -1:
             st.markdown("<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
 
         time.sleep(4)  # Pause on the card back for 4 full seconds
+        st.balloons()
 
         # 2. "Flip" the card by replacing the placeholder's content
         drawn_card = st.session_state.deck[seed_index]
