@@ -105,7 +105,7 @@ def display_card(card, header="Your Card"):
 initialize_deck()
 
 # --- Title and Introduction ---
-st.title("🌌 Pasona Connect Tarot Demo App")
+st.title("🌌 Pasona Connect Tarot App Demo")
 st.markdown(
     "Get a little dose of fun, lighthearted career advice. "
     "Designed specifically for Pasona Connect! "
