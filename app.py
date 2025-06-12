@@ -178,7 +178,7 @@ if st.session_state.chosen_card_index != -1:
             st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
             st.markdown("<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
 
-        time.sleep(4)  # Pause on the card back for 4 full seconds
+        time.sleep(3)  # Pause on the card back for 4 full seconds
         st.balloons()
 
         # 2. "Flip" the card by replacing the placeholder's content
