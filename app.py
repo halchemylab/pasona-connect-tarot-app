@@ -112,8 +112,13 @@ def display_card(card, header="Your Card"):
 # Initialize the deck on the first run
 initialize_deck()
 
-# --- Title and Introduction ---
+
+# --- Title, Name Input, and Introduction ---
 st.title("✨ :rainbow[Pasona Connect] Tarot App Demo")
+
+# Name input for personalization
+name = st.text_input("Enter your name for a personalized reading (optional):", "")
+
 st.markdown(
     "Get a little dose of fun, lighthearted career advice. "
     "Designed specifically for Pasona Connect! "
@@ -172,9 +177,8 @@ for i, col in enumerate(card_backs_cols_2):
 
 # --- Card Drawing Logic ---
 if st.session_state.chosen_card_index != -1:
-    with st.spinner("Drawing from the deck..."):
-        time.sleep(1.0)
-
+    display_name = name.strip() if name.strip() else "there"
+    time.sleep(1.0)
     seed_index = st.session_state.chosen_card_index
 
     # --- Single Card Reading ---
@@ -184,9 +188,9 @@ if st.session_state.chosen_card_index != -1:
         # 1. Show the card back
         with placeholder.container(border=True):
             st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
-            st.markdown("<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
 
-        time.sleep(3)  # Pause on the card back for 4 full seconds
+        time.sleep(3)  # Pause on the card back for 3 seconds
         st.balloons()
 
         # 2. "Flip" the card by replacing the placeholder's content
@@ -194,20 +198,25 @@ if st.session_state.chosen_card_index != -1:
         is_reversed = random.choice([True, False])  # Restore 50/50 chance
         card_number = seed_index + 1
         with placeholder.container(border=True):
+            # Personalize the card header with the user's name if provided
+            card_owner = f"{display_name}'s Card" if display_name.lower() != "there" else "Your Card"
             if is_reversed:
-                st.header(f"Your Card (Reversed) — #{card_number}", anchor=False, divider="rainbow")
+                st.header(f"{card_owner} (Reversed) — #{card_number}", anchor=False, divider="rainbow")
                 st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
                 st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                 st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
             else:
-                st.header(f"Your Card — #{card_number}", anchor=False, divider="rainbow")
+                st.header(f"{card_owner} — #{card_number}", anchor=False, divider="rainbow")
                 st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
                 st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                 st.info(f"**Meaning:** {drawn_card['meaning']}")
 
         # --- Share to Teams Button ---
         st.divider()
-        reading_text = f"""🔮 My Pasona Tarot Reading:\n**{drawn_card['title']}** {drawn_card['emoji']}\n*_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*\n"""
+        reading_text = f"""🔮 My Pasona Tarot Reading for {display_name}:
+**{drawn_card['title']}** {drawn_card['emoji']}
+*_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*
+"""
         # Make the share section hidable with persistent state
         if "show_share" not in st.session_state:
             st.session_state.show_share = False
