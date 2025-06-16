@@ -1,7 +1,11 @@
+
 import streamlit as st
 import random
 import time
 import copy
+import os
+from dotenv import load_dotenv
+import openai
 
 # --- App Configuration ---
 st.set_page_config(
@@ -9,6 +13,10 @@ st.set_page_config(
     page_icon="🔮",
     layout="centered",
 )
+
+# --- Load environment variables and set OpenAI API key ---
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # --- Card Data ---
 # A clean, easily customizable data structure for the 10 cards.
@@ -261,3 +269,34 @@ if st.session_state.chosen_card_index != -1:
                 st.info(f"**Reversed Meaning:** {card3['reversed_meaning']}")
             else:
                 st.info(f"**Meaning:** {card3['meaning']}")
+
+        # --- AI Explanation Section ---
+        if openai.api_key:
+            ai_prompt = (
+                f"""
+                You are a career coach tarot expert. Given the following 3-card tarot reading, provide a concise, insightful summary (2-4 sentences) that connects the cards' meanings to a career context. Use a friendly, encouraging tone.
+
+                Past Influence: {card1['title']} ({'Reversed' if reversed1 else 'Upright'}) - {card1['reversed_meaning'] if reversed1 else card1['meaning']}
+                Present Focus: {card2['title']} ({'Reversed' if reversed2 else 'Upright'}) - {card2['reversed_meaning'] if reversed2 else card2['meaning']}
+                Future Potential: {card3['title']} ({'Reversed' if reversed3 else 'Upright'}) - {card3['reversed_meaning'] if reversed3 else card3['meaning']}
+                """
+            )
+            if st.button("Get AI Career Explanation", key="ai_explain_btn"):
+                with st.spinner("Asking the AI for your career insight..."):
+                    try:
+                        response = openai.chat.completions.create(
+                            model="gpt-3.5-turbo",
+                            messages=[
+                                {"role": "system", "content": "You are a helpful assistant."},
+                                {"role": "user", "content": ai_prompt}
+                            ],
+                            max_tokens=200,
+                            temperature=0.7,
+                        )
+                        ai_text = response.choices[0].message.content.strip()
+                        st.success("AI Career Explanation:")
+                        st.write(ai_text)
+                    except Exception as e:
+                        st.error(f"AI explanation failed: {e}")
+        else:
+            st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
