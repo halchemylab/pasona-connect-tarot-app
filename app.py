@@ -129,7 +129,13 @@ st.divider()
 # --- Controls in the Sidebar ---
 with st.sidebar:
     st.header("✨ Controls")
-    
+
+    # --- Reset Button ---
+    if st.button("Reset App", use_container_width=True):
+        st.success("App is resetting...")
+        time.sleep(0.5)
+        st.rerun()
+
     # The Shuffle button reruns the shuffling logic for the session_state deck
     if st.button("Shuffle Deck", use_container_width=True):
         shuffled_deck = copy.deepcopy(INITIAL_DECK)
@@ -142,6 +148,13 @@ with st.sidebar:
         st.success("The deck has been shuffled and the app has been reset!")
         time.sleep(1) # a little pause to let the user see the message
         st.rerun()
+
+    # --- Toggle Light/Dark Mode Button ---
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = "light"
+    if st.button(f"Toggle Light/Dark Mode", use_container_width=True):
+        st.session_state.theme_mode = "dark" if st.session_state.theme_mode == "light" else "light"
+        st.info(f"Theme toggled to {st.session_state.theme_mode.title()}! To change the theme, go to the Streamlit settings (top right menu). Programmatic theme switching is not supported in Streamlit as of June 2025.")
 
     st.markdown("---")
     reading_type = st.radio(
