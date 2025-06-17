@@ -166,72 +166,28 @@ if reading_type == "Check Deck of Cards":
     st.header("Check Deck of Cards", anchor=False, divider="rainbow")
     st.markdown("""
     <div style='margin-top: 0.5em; margin-bottom: 0.5em; font-weight: bold; font-size: 1.1em;'>
-        Browse all cards and their meanings below. Hover for a cool effect!
+        Browse all cards and their meanings below. Use the arrows to scroll!
     </div>
-    <style>
-    .tarot-carousel {
-        display: flex;
-        overflow-x: auto;
-        gap: 1.2em;
-        padding-bottom: 0.5em;
-        scroll-behavior: smooth;
-    }
-    .tarot-card {
-        background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%);
-        border-radius: 18px;
-        box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10);
-        min-width: 220px;
-        max-width: 220px;
-        min-height: 320px;
-        transition: transform 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.25s;
-        cursor: pointer;
-        border: 2px solid #e0e0f0;
-        position: relative;
-        flex-shrink: 0;
-    }
-    .tarot-card:hover {
-        transform: scale(1.07) rotate(-2deg);
-        box-shadow: 0 8px 32px 0 rgba(80,80,120,0.18);
-        border-color: #a0a0ff;
-        z-index: 2;
-    }
-    .tarot-emoji {
-        font-size: 3.5em;
-        text-align: center;
-        margin-top: 1.1em;
-        margin-bottom: 0.2em;
-    }
-    .tarot-title {
-        font-size: 1.25em;
-        font-weight: 600;
-        text-align: center;
-        margin-bottom: 0.2em;
-    }
-    .tarot-meaning {
-        font-size: 0.98em;
-        color: #444;
-        text-align: center;
-        margin: 0.5em 0.7em 0.7em 0.7em;
-    }
-    .tarot-reversed {
-        font-size: 0.92em;
-        color: #888;
-        text-align: center;
-        margin: 0.2em 0.7em 0.7em 0.7em;
-    }
-    </style>
-    <div class='tarot-carousel'>
     """, unsafe_allow_html=True)
-    for idx, card in enumerate(INITIAL_DECK):
-        st.markdown(f"""
-        <div class='tarot-card'>
-            <div class='tarot-emoji'>{card['emoji']}</div>
-            <div class='tarot-title'>{card['title']}</div>
-            <div class='tarot-meaning'>{card['meaning']}</div>
-            <div class='tarot-reversed'><b>Reversed:</b> {card['reversed_meaning']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    if "current_card_index" not in st.session_state:
+        st.session_state.current_card_index = 0
+    col1, col2, col3 = st.columns([1,2,1])
+    with col1:
+        if st.button("⬅️", key="prev_card", use_container_width=True) and st.session_state.current_card_index > 0:
+            st.session_state.current_card_index -= 1
+    with col3:
+        if st.button("➡️", key="next_card", use_container_width=True) and st.session_state.current_card_index < len(INITIAL_DECK)-1:
+            st.session_state.current_card_index += 1
+    card = INITIAL_DECK[st.session_state.current_card_index]
+    st.markdown(f"""
+    <div class='tarot-card' style='margin: 0 auto; max-width: 340px; background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%); border-radius: 18px; box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10); min-height: 320px; border: 2px solid #e0e0f0; padding: 0.5em 0.5em 0.7em 0.5em;'>
+        <div class='tarot-emoji' style='font-size: 3.5em; text-align: center; margin-top: 1.1em; margin-bottom: 0.2em;'>{card['emoji']}</div>
+        <div class='tarot-title' style='font-size: 1.25em; font-weight: 600; text-align: center; margin-bottom: 0.2em;'>{card['title']}</div>
+        <div class='tarot-meaning' style='font-size: 0.98em; color: #444; text-align: center; margin: 0.5em 0.7em 0.7em 0.7em;'>{card['meaning']}</div>
+        <div class='tarot-reversed' style='font-size: 0.92em; color: #888; text-align: center; margin: 0.2em 0.7em 0.7em 0.7em;'><b>Reversed:</b> {card['reversed_meaning']}</div>
+        <div style='text-align:center; margin-top:0.5em; color:#888;'>Card {st.session_state.current_card_index+1} of {len(INITIAL_DECK)}</div>
+    </div>
+    """, unsafe_allow_html=True)
 else:
     # --- Main Interaction Area ---
     st.subheader("Click a Card to Draw Your Reading", anchor=False)
