@@ -171,13 +171,6 @@ if reading_type == "Check Deck of Cards":
     """, unsafe_allow_html=True)
     if "current_card_index" not in st.session_state:
         st.session_state.current_card_index = 0
-    col1, col2, col3 = st.columns([1,2,1])
-    with col1:
-        if st.button("⬅️", key="prev_card", use_container_width=True) and st.session_state.current_card_index > 0:
-            st.session_state.current_card_index -= 1
-    with col3:
-        if st.button("➡️", key="next_card", use_container_width=True) and st.session_state.current_card_index < len(INITIAL_DECK)-1:
-            st.session_state.current_card_index += 1
     card = INITIAL_DECK[st.session_state.current_card_index]
     st.markdown(f"""
     <div class='tarot-card' style='margin: 0 auto; max-width: 340px; background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%); border-radius: 18px; box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10); min-height: 320px; border: 2px solid #e0e0f0; padding: 0.5em 0.5em 0.7em 0.5em;'>
@@ -188,6 +181,13 @@ if reading_type == "Check Deck of Cards":
         <div style='text-align:center; margin-top:0.5em; color:#888;'>Card {st.session_state.current_card_index+1} of {len(INITIAL_DECK)}</div>
     </div>
     """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
+    with col1:
+        if st.button("⬅️", key="prev_card", use_container_width=True) and st.session_state.current_card_index > 0:
+            st.session_state.current_card_index -= 1
+    with col3:
+        if st.button("➡️", key="next_card", use_container_width=True) and st.session_state.current_card_index < len(INITIAL_DECK)-1:
+            st.session_state.current_card_index += 1
 else:
     # --- Main Interaction Area ---
     st.subheader("Click a Card to Draw Your Reading", anchor=False)
