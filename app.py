@@ -241,12 +241,12 @@ else:
                 card_owner = f"{display_name}'s Card" if display_name.lower() != "there" else "Your Card"
                 if is_reversed:
                     st.header(f"{card_owner} (Reversed) — #{card_number}", anchor=False, divider="rainbow")
-                    st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='tarot-emoji' style='font-size: 80px; display: flex; justify-content: center; align-items: center; width: 100%; text-align: center;'>{drawn_card['emoji']}</span>", unsafe_allow_html=True)
                     st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                     st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
                 else:
                     st.header(f"{card_owner} — #{card_number}", anchor=False, divider="rainbow")
-                    st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='tarot-emoji' style='font-size: 80px; display: flex; justify-content: center; align-items: center; width: 100%; text-align: center;'>{drawn_card['emoji']}</span>", unsafe_allow_html=True)
                     st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
                     st.info(f"**Meaning:** {drawn_card['meaning']}")
 
