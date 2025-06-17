@@ -348,3 +348,17 @@ Future Potential: {card3['title']} ({'Reversed' if reversed3 else 'Upright'}) - 
                             st.error(f"AI explanation failed: {e}")
             else:
                 st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
+
+# --- Main Interaction Area ---
+# Inject custom CSS for glowing border effect on hover
+st.markdown('''
+    <style>
+    .tarot-card {
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+    .tarot-card:hover {
+        box-shadow: 0 0 16px 4px #a084ff, 0 2px 12px 0 rgba(80,80,120,0.10);
+        border: 2.5px solid #a084ff !important;
+    }
+    </style>
+''', unsafe_allow_html=True)
