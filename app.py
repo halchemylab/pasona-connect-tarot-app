@@ -350,15 +350,31 @@ Future Potential: {card3['title']} ({'Reversed' if reversed3 else 'Upright'}) - 
                 st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
 
 # --- Main Interaction Area ---
-# Inject custom CSS for glowing border effect on hover
+# Inject custom CSS for glowing border, scale on hover, and animated emoji bounce
 st.markdown('''
     <style>
     .tarot-card {
-        transition: box-shadow 0.3s, border-color 0.3s;
+        transition: box-shadow 0.3s, border-color 0.3s, transform 0.25s cubic-bezier(.25,.8,.25,1);
     }
     .tarot-card:hover {
         box-shadow: 0 0 16px 4px #a084ff, 0 2px 12px 0 rgba(80,80,120,0.10);
         border: 2.5px solid #a084ff !important;
+        transform: scale(1.06) perspective(600px) rotateY(-2deg) rotateX(2deg);
+        z-index: 2;
+    }
+    .tarot-emoji {
+        animation: tarot-bounce 1.2s cubic-bezier(.28,.84,.42,1) infinite alternate;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        text-align: center;
+    }
+    @keyframes tarot-bounce {
+        0%   { transform: translateY(0); }
+        40%  { transform: translateY(-18px) scale(1.08); }
+        60%  { transform: translateY(-12px) scale(1.04); }
+        100% { transform: translateY(0); }
     }
     </style>
 ''', unsafe_allow_html=True)
