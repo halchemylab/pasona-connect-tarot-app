@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 import time
@@ -112,7 +111,6 @@ def display_card(card, header="Your Card"):
 # Initialize the deck on the first run
 initialize_deck()
 
-
 # --- Title, Name Input, and Introduction ---
 st.title("✨ :rainbow[Pasona Connect] Tarot App Demo")
 
@@ -159,166 +157,238 @@ with st.sidebar:
     st.markdown("---")
     reading_type = st.radio(
         "Choose your reading:",
-        ("Single Card Draw", "3-Card Career Reading"),
-        captions=("Quick daily insight.", "Past, Present, and Future outlook.")
+        ("Single Card Draw", "3-Card Career Reading", "Check Deck of Cards"),
+        captions=("Quick daily insight.", "Past, Present, and Future outlook.", "Browse all cards and their meanings.")
     )
 
 # --- Main Interaction Area ---
-st.subheader("Click a Card to Draw Your Reading", anchor=False)
+if reading_type == "Check Deck of Cards":
+    st.header("Check Deck of Cards", anchor=False, divider="rainbow")
+    st.markdown("""
+    <div style='margin-top: 0.5em; margin-bottom: 0.5em; font-weight: bold; font-size: 1.1em;'>
+        Browse all cards and their meanings below. Hover for a cool effect!
+    </div>
+    <style>
+    .tarot-carousel {
+        display: flex;
+        overflow-x: auto;
+        gap: 1.2em;
+        padding-bottom: 0.5em;
+        scroll-behavior: smooth;
+    }
+    .tarot-card {
+        background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%);
+        border-radius: 18px;
+        box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10);
+        min-width: 220px;
+        max-width: 220px;
+        min-height: 320px;
+        transition: transform 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.25s;
+        cursor: pointer;
+        border: 2px solid #e0e0f0;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .tarot-card:hover {
+        transform: scale(1.07) rotate(-2deg);
+        box-shadow: 0 8px 32px 0 rgba(80,80,120,0.18);
+        border-color: #a0a0ff;
+        z-index: 2;
+    }
+    .tarot-emoji {
+        font-size: 3.5em;
+        text-align: center;
+        margin-top: 1.1em;
+        margin-bottom: 0.2em;
+    }
+    .tarot-title {
+        font-size: 1.25em;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 0.2em;
+    }
+    .tarot-meaning {
+        font-size: 0.98em;
+        color: #444;
+        text-align: center;
+        margin: 0.5em 0.7em 0.7em 0.7em;
+    }
+    .tarot-reversed {
+        font-size: 0.92em;
+        color: #888;
+        text-align: center;
+        margin: 0.2em 0.7em 0.7em 0.7em;
+    }
+    </style>
+    <div class='tarot-carousel'>
+    """, unsafe_allow_html=True)
+    for idx, card in enumerate(INITIAL_DECK):
+        st.markdown(f"""
+        <div class='tarot-card'>
+            <div class='tarot-emoji'>{card['emoji']}</div>
+            <div class='tarot-title'>{card['title']}</div>
+            <div class='tarot-meaning'>{card['meaning']}</div>
+            <div class='tarot-reversed'><b>Reversed:</b> {card['reversed_meaning']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+else:
+    # --- Main Interaction Area ---
+    st.subheader("Click a Card to Draw Your Reading", anchor=False)
 
-card_backs_cols = st.columns(5)
-card_back_design = "🎴"
+    card_backs_cols = st.columns(5)
+    card_back_design = "🎴"
 
-# Use session_state to persist chosen card index
-if "chosen_card_index" not in st.session_state:
-    st.session_state.chosen_card_index = -1
+    # Use session_state to persist chosen card index
+    if "chosen_card_index" not in st.session_state:
+        st.session_state.chosen_card_index = -1
 
-# First row (cards 1-5)
-for i, col in enumerate(card_backs_cols):
-    with col:
-        card_number = i + 1
-        if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i}", use_container_width=True):
-            st.session_state.chosen_card_index = i
+    # First row (cards 1-5)
+    for i, col in enumerate(card_backs_cols):
+        with col:
+            card_number = i + 1
+            if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i}", use_container_width=True):
+                st.session_state.chosen_card_index = i
 
-# Second row (cards 6-10)
-card_backs_cols_2 = st.columns(5)
-for i, col in enumerate(card_backs_cols_2):
-    with col:
-        card_number = i + 6
-        if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i+5}", use_container_width=True):
-            st.session_state.chosen_card_index = i + 5
+    # Second row (cards 6-10)
+    card_backs_cols_2 = st.columns(5)
+    for i, col in enumerate(card_backs_cols_2):
+        with col:
+            card_number = i + 6
+            if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i+5}", use_container_width=True):
+                st.session_state.chosen_card_index = i + 5
 
-# --- Card Drawing Logic ---
-if st.session_state.chosen_card_index != -1:
-    display_name = name.strip() if name.strip() else "there"
-    time.sleep(1.0)
-    seed_index = st.session_state.chosen_card_index
+    # --- Card Drawing Logic ---
+    if st.session_state.chosen_card_index != -1:
+        display_name = name.strip() if name.strip() else "there"
+        time.sleep(1.0)
+        seed_index = st.session_state.chosen_card_index
 
-    # --- Single Card Reading ---
-    if reading_type == "Single Card Draw":
-        placeholder = st.empty()  # Create an empty container for the animation
+        # --- Single Card Reading ---
+        if reading_type == "Single Card Draw":
+            placeholder = st.empty()  # Create an empty container for the animation
 
-        # 1. Show the card back
-        with placeholder.container(border=True):
-            st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
+            # 1. Show the card back
+            with placeholder.container(border=True):
+                st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
 
-        time.sleep(3)  # Pause on the card back for 3 seconds
-        st.balloons()
+            time.sleep(3)  # Pause on the card back for 3 seconds
+            st.balloons()
 
-        # 2. "Flip" the card by replacing the placeholder's content
-        drawn_card = st.session_state.deck[seed_index]
-        is_reversed = random.choice([True, False])  # Restore 50/50 chance
-        card_number = seed_index + 1
-        with placeholder.container(border=True):
-            # Personalize the card header with the user's name if provided
-            card_owner = f"{display_name}'s Card" if display_name.lower() != "there" else "Your Card"
-            if is_reversed:
-                st.header(f"{card_owner} (Reversed) — #{card_number}", anchor=False, divider="rainbow")
-                st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
-                st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
-            else:
-                st.header(f"{card_owner} — #{card_number}", anchor=False, divider="rainbow")
-                st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
-                st.info(f"**Meaning:** {drawn_card['meaning']}")
+            # 2. "Flip" the card by replacing the placeholder's content
+            drawn_card = st.session_state.deck[seed_index]
+            is_reversed = random.choice([True, False])  # Restore 50/50 chance
+            card_number = seed_index + 1
+            with placeholder.container(border=True):
+                # Personalize the card header with the user's name if provided
+                card_owner = f"{display_name}'s Card" if display_name.lower() != "there" else "Your Card"
+                if is_reversed:
+                    st.header(f"{card_owner} (Reversed) — #{card_number}", anchor=False, divider="rainbow")
+                    st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
+                    st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
+                else:
+                    st.header(f"{card_owner} — #{card_number}", anchor=False, divider="rainbow")
+                    st.markdown(f"<p style='text-align: center; font-size: 80px;'>{drawn_card['emoji']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
+                    st.info(f"**Meaning:** {drawn_card['meaning']}")
 
-        # --- Share to Teams Button ---
-        st.divider()
-        reading_text = f"""🔮 My Pasona Tarot Reading for {display_name}:
+            # --- Share to Teams Button ---
+            st.divider()
+            reading_text = f"""🔮 My Pasona Tarot Reading for {display_name}:
 **{drawn_card['title']}** {drawn_card['emoji']}
 *_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*
 """
-        # Make the share section hidable with persistent state
-        if "show_share" not in st.session_state:
-            st.session_state.show_share = False
-        if "last_share_btn" not in st.session_state:
-            st.session_state.last_share_btn = False
-        share_btn = st.button(
-            "Show shareable reading text" if not st.session_state.show_share else "Hide shareable reading text",
-            key="toggle_share_btn"
-        )
-        if share_btn and not st.session_state.last_share_btn:
-            st.session_state.show_share = not st.session_state.show_share
-        st.session_state.last_share_btn = share_btn
-        if st.session_state.show_share:
-            st.text_area("Copy this to share your reading!", reading_text, height=150)
+            # Make the share section hidable with persistent state
+            if "show_share" not in st.session_state:
+                st.session_state.show_share = False
+            if "last_share_btn" not in st.session_state:
+                st.session_state.last_share_btn = False
+            share_btn = st.button(
+                "Show shareable reading text" if not st.session_state.show_share else "Hide shareable reading text",
+                key="toggle_share_btn"
+            )
+            if share_btn and not st.session_state.last_share_btn:
+                st.session_state.show_share = not st.session_state.show_share
+            st.session_state.last_share_btn = share_btn
+            if st.session_state.show_share:
+                st.text_area("Copy this to share your reading!", reading_text, height=150)
 
-    # --- 3-Card Reading ---
-    elif reading_type == "3-Card Career Reading":
-        st.header("Your Career Reading", anchor=False, divider="rainbow")
-        # Draw 3 cards sequentially from the seeded position, wrapping around if needed
-        card1_index = seed_index
-        card2_index = (seed_index + 1) % 10 # Modulo for wrapping around the deck
-        card3_index = (seed_index + 2) % 10
+        # --- 3-Card Reading ---
+        elif reading_type == "3-Card Career Reading":
+            st.header("Your Career Reading", anchor=False, divider="rainbow")
+            # Draw 3 cards sequentially from the seeded position, wrapping around if needed
+            card1_index = seed_index
+            card2_index = (seed_index + 1) % 10 # Modulo for wrapping around the deck
+            card3_index = (seed_index + 2) % 10
 
-        card1 = st.session_state.deck[card1_index]
-        card2 = st.session_state.deck[card2_index]
-        card3 = st.session_state.deck[card3_index]
+            card1 = st.session_state.deck[card1_index]
+            card2 = st.session_state.deck[card2_index]
+            card3 = st.session_state.deck[card3_index]
 
-        # Decide reversed state for each card
-        reversed1 = random.choice([True, False])
-        reversed2 = random.choice([True, False])
-        reversed3 = random.choice([True, False])
+            # Decide reversed state for each card
+            reversed1 = random.choice([True, False])
+            reversed2 = random.choice([True, False])
+            reversed3 = random.choice([True, False])
 
-        # Bonus: Use st.columns for a clean side-by-side layout
-        col1, col2, col3 = st.columns(3)
+            # Bonus: Use st.columns for a clean side-by-side layout
+            col1, col2, col3 = st.columns(3)
 
-        with col1:
-            st.markdown("<h4 style='text-align: center;'>Past Influence</h4>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card1['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card1['title']}{' (Reversed)' if reversed1 else ''}</h5>", unsafe_allow_html=True)
-            if reversed1:
-                st.info(f"**Reversed Meaning:** {card1['reversed_meaning']}")
-            else:
-                st.info(f"**Meaning:** {card1['meaning']}")
+            with col1:
+                st.markdown("<h4 style='text-align: center;'>Past Influence</h4>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card1['emoji']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h5 style='text-align: center;'>{card1['title']}{' (Reversed)' if reversed1 else ''}</h5>", unsafe_allow_html=True)
+                if reversed1:
+                    st.info(f"**Reversed Meaning:** {card1['reversed_meaning']}")
+                else:
+                    st.info(f"**Meaning:** {card1['meaning']}")
 
-        with col2:
-            st.markdown("<h4 style='text-align: center;'>Present Focus</h4>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card2['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card2['title']}{' (Reversed)' if reversed2 else ''}</h5>", unsafe_allow_html=True)
-            if reversed2:
-                st.info(f"**Reversed Meaning:** {card2['reversed_meaning']}")
-            else:
-                st.info(f"**Meaning:** {card2['meaning']}")
+            with col2:
+                st.markdown("<h4 style='text-align: center;'>Present Focus</h4>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card2['emoji']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h5 style='text-align: center;'>{card2['title']}{' (Reversed)' if reversed2 else ''}</h5>", unsafe_allow_html=True)
+                if reversed2:
+                    st.info(f"**Reversed Meaning:** {card2['reversed_meaning']}")
+                else:
+                    st.info(f"**Meaning:** {card2['meaning']}")
 
-        with col3:
-            st.markdown("<h4 style='text-align: center;'>Future Potential</h4>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card3['emoji']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<h5 style='text-align: center;'>{card3['title']}{' (Reversed)' if reversed3 else ''}</h5>", unsafe_allow_html=True)
-            if reversed3:
-                st.info(f"**Reversed Meaning:** {card3['reversed_meaning']}")
-            else:
-                st.info(f"**Meaning:** {card3['meaning']}")
+            with col3:
+                st.markdown("<h4 style='text-align: center;'>Future Potential</h4>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card3['emoji']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h5 style='text-align: center;'>{card3['title']}{' (Reversed)' if reversed3 else ''}</h5>", unsafe_allow_html=True)
+                if reversed3:
+                    st.info(f"**Reversed Meaning:** {card3['reversed_meaning']}")
+                else:
+                    st.info(f"**Meaning:** {card3['meaning']}")
 
-        # --- AI Explanation Section ---
-        if openai.api_key:
-            ai_prompt = (
-                f"""
+            # --- AI Explanation Section ---
+            if openai.api_key:
+                ai_prompt = (
+                    f"""
 You are a career coach tarot expert. Given the following 3-card tarot reading, craft a cohesive, insightful narrative (2-4 sentences) that weaves together the cards' meanings into a single story about the user's career journey. Avoid repeating phrases and ensure the explanation feels unified and encouraging.
 
 Past Influence: {card1['title']} ({'Reversed' if reversed1 else 'Upright'}) - {card1['reversed_meaning'] if reversed1 else card1['meaning']}
 Present Focus: {card2['title']} ({'Reversed' if reversed2 else 'Upright'}) - {card2['reversed_meaning'] if reversed2 else card2['meaning']}
 Future Potential: {card3['title']} ({'Reversed' if reversed3 else 'Upright'}) - {card3['reversed_meaning'] if reversed3 else card3['meaning']}
-                """
-            )
-            if st.button("Get AI Career Explanation", key="ai_explain_btn"):
-                with st.spinner("Asking the AI for your career insight..."):
-                    try:
-                        response = openai.chat.completions.create(
-                            model="gpt-4o",
-                            messages=[
-                                {"role": "system", "content": "You are a helpful assistant."},
-                                {"role": "user", "content": ai_prompt}
-                            ],
-                            max_tokens=200,
-                            temperature=0.7,
-                        )
-                        ai_text = response.choices[0].message.content.strip()
-                        st.success("AI Career Explanation:")
-                        st.write(ai_text)
-                    except Exception as e:
-                        st.error(f"AI explanation failed: {e}")
-        else:
-            st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
+                    """
+                )
+                if st.button("Get AI Career Explanation", key="ai_explain_btn"):
+                    with st.spinner("Asking the AI for your career insight..."):
+                        try:
+                            response = openai.chat.completions.create(
+                                model="gpt-4o",
+                                messages=[
+                                    {"role": "system", "content": "You are a helpful assistant."},
+                                    {"role": "user", "content": ai_prompt}
+                                ],
+                                max_tokens=200,
+                                temperature=0.7,
+                            )
+                            ai_text = response.choices[0].message.content.strip()
+                            st.success("AI Career Explanation:")
+                            st.write(ai_text)
+                        except Exception as e:
+                            st.error(f"AI explanation failed: {e}")
+            else:
+                st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
