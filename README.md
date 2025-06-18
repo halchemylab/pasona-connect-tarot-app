@@ -10,12 +10,18 @@ Pasona Tarot for Work is a web application that lets users draw virtual tarot ca
 
 - 10 custom work/career-themed tarot cards, each with emoji, title, and dual meanings
 - Shuffle the deck at any time for a fresh reading
-- Choose between a single card or a 3-card spread (Past, Present, Future)
+- Choose between a single card, a 3-card spread (Past, Present, Future), or **browse all cards and their meanings in the Check Deck mode**
+- **Interactive card navigation**: Scroll through cards with arrow buttons in Check Deck mode
+- **Card-flip animation** and delay for dramatic effect when drawing a card
 - Interactive UI with card-flip animation and sharing option
+- **Shareable reading text**: Toggle to show/hide a copyable text area for sharing your reading
 - AI-powered 3-card career reading explanation (requires OpenAI API key)
 - Toggle Light/Dark mode (see sidebar)
 - Personalized readings with optional name input
 - Built with [Streamlit](https://streamlit.io/) for easy deployment and use
+- **Custom CSS for card hover effects and emoji animation**
+- **Session state management**: Deck order, chosen cards, and UI state persist across reruns
+- **Robust error handling** for AI features and user input
 
 ## Installation
 
