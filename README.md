@@ -4,7 +4,7 @@
 
 ## Project Description
 
-Pasona Tarot for Work is a web application that lets users draw virtual tarot cards for lighthearted, motivational career guidance. Each card offers unique advice or insight, with both upright and reversed meanings. Users can choose between a single-card daily reading or a 3-card career spread (Past, Present, Future).
+Pasona Connect Tarot App Demo is a web application that lets users draw virtual tarot cards for lighthearted, motivational career guidance. Each card offers unique advice or insight, with both upright and reversed meanings. Users can choose between a single-card daily reading or a 3-card career spread (Past, Present, Future).
 
 ## Features
 
