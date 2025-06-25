@@ -273,7 +273,11 @@ else:
 
         # --- 3-Card Reading ---
         elif reading_type == "3-Card Career Reading":
-            st.header("Your Career Reading", anchor=False, divider="rainbow")
+            display_name = name.strip() if name.strip() else ""
+            if display_name:
+                st.header(f"{display_name}'s Career Reading", anchor=False, divider="rainbow")
+            else:
+                st.header("Your Career Reading", anchor=False, divider="rainbow")
             # Draw 3 cards sequentially from the seeded position, wrapping around if needed
             card1_index = seed_index
             card2_index = (seed_index + 1) % 10 # Modulo for wrapping around the deck
