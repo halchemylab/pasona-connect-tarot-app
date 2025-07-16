@@ -234,7 +234,8 @@ else:
 
             # 2. "Flip" the card by replacing the placeholder's content
             drawn_card = st.session_state.deck[seed_index]
-            is_reversed = random.choice([True, False])  # Restore 50/50 chance
+            # 2/3 chance for normal, 1/3 for reversed
+            is_reversed = random.choices([False, True], weights=[2, 1])[0]
             card_number = seed_index + 1
             with placeholder.container(border=True):
                 # Personalize the card header with the user's name if provided
@@ -288,9 +289,10 @@ else:
             card3 = st.session_state.deck[card3_index]
 
             # Decide reversed state for each card
-            reversed1 = random.choice([True, False])
-            reversed2 = random.choice([True, False])
-            reversed3 = random.choice([True, False])
+            # 2/3 chance for normal, 1/3 for reversed for each card
+            reversed1 = random.choices([False, True], weights=[2, 1])[0]
+            reversed2 = random.choices([False, True], weights=[2, 1])[0]
+            reversed3 = random.choices([False, True], weights=[2, 1])[0]
 
             # Bonus: Use st.columns for a clean side-by-side layout
             col1, col2, col3 = st.columns(3)
