@@ -1,7 +1,10 @@
 import copy
+import json
 import os
 import random
 import time
+from datetime import date, timedelta
+from pathlib import Path
 
 import openai
 import streamlit as st
@@ -99,6 +102,8 @@ JOURNEY_STEPS = [
     "4. Action Plan",
     "5. Wrap-up",
 ]
+DATA_DIR = Path("data")
+PROGRESS_FILE = DATA_DIR / "user_progress.json"
 
 
 def initialize_app_state():
@@ -123,6 +128,8 @@ def initialize_app_state():
             "challenge": "",
             "goal": "Build momentum on an important project",
         }
+    if "reading_saved" not in st.session_state:
+        st.session_state.reading_saved = False
 
 
 def reset_journey(reset_deck=False):
@@ -133,12 +140,135 @@ def reset_journey(reset_deck=False):
     st.session_state.journey_step = 0
     st.session_state.selected_seed_index = None
     st.session_state.guided_reading = None
+    st.session_state.reading_saved = False
 
 
 def toggle_theme():
     st.session_state.theme_mode = (
         "dark" if st.session_state.theme_mode == "light" else "light"
     )
+
+
+def ensure_progress_store():
+    DATA_DIR.mkdir(exist_ok=True)
+    if not PROGRESS_FILE.exists():
+        PROGRESS_FILE.write_text(json.dumps({"profiles": {}}, indent=2), encoding="utf-8")
+
+
+def load_progress_store():
+    ensure_progress_store()
+    try:
+        return json.loads(PROGRESS_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"profiles": {}}
+
+
+def save_progress_store(store):
+    ensure_progress_store()
+    PROGRESS_FILE.write_text(json.dumps(store, indent=2), encoding="utf-8")
+
+
+def current_profile_key():
+    name = st.session_state.guided_inputs["name"].strip()
+    return name.lower() if name else "guest"
+
+
+def current_profile_label():
+    name = st.session_state.guided_inputs["name"].strip()
+    return name if name else "Guest"
+
+
+def get_profile_snapshot():
+    store = load_progress_store()
+    profiles = store.setdefault("profiles", {})
+    profile = profiles.setdefault(
+        current_profile_key(),
+        {
+            "display_name": current_profile_label(),
+            "total_sessions": 0,
+            "last_session_date": None,
+            "streak": 0,
+            "best_streak": 0,
+            "theme_counts": {},
+            "history": [],
+        },
+    )
+    profile["display_name"] = current_profile_label()
+    return store, profile
+
+
+def update_streak(profile, session_day):
+    previous = profile.get("last_session_date")
+    if previous == session_day:
+        return
+    if previous:
+        previous_date = date.fromisoformat(previous)
+        current_date = date.fromisoformat(session_day)
+        if previous_date == current_date - timedelta(days=1):
+            profile["streak"] += 1
+        else:
+            profile["streak"] = 1
+    else:
+        profile["streak"] = 1
+    profile["best_streak"] = max(profile["best_streak"], profile["streak"])
+    profile["last_session_date"] = session_day
+
+
+def save_current_session():
+    if st.session_state.reading_saved or not st.session_state.guided_reading:
+        return
+
+    store, profile = get_profile_snapshot()
+    reading = st.session_state.guided_reading
+    session_day = date.today().isoformat()
+    next_move = st.session_state.get("user_next_move", "").strip()
+
+    profile["total_sessions"] += 1
+    update_streak(profile, session_day)
+    theme = reading["dominant_theme"]
+    profile["theme_counts"][theme] = profile["theme_counts"].get(theme, 0) + 1
+    profile["history"].insert(
+        0,
+        {
+            "date": session_day,
+            "goal": st.session_state.guided_inputs["goal"],
+            "challenge": st.session_state.guided_inputs["challenge"],
+            "dominant_theme": theme,
+            "cards": [
+                {
+                    "title": card["title"],
+                    "is_reversed": card["is_reversed"],
+                    "position_label": card["position_label"],
+                }
+                for card in reading["cards"]
+            ],
+            "next_move": next_move or reading["action_plan"][0],
+        },
+    )
+    profile["history"] = profile["history"][:10]
+    save_progress_store(store)
+    st.session_state.reading_saved = True
+
+
+def render_progress_dashboard():
+    _, profile = get_profile_snapshot()
+    st.subheader("Your Progress", anchor=False)
+    metric_cols = st.columns(3)
+    metric_cols[0].metric("Sessions", profile["total_sessions"])
+    metric_cols[1].metric("Current streak", profile["streak"])
+    metric_cols[2].metric("Best streak", profile["best_streak"])
+
+    if profile["theme_counts"]:
+        top_theme = max(profile["theme_counts"], key=profile["theme_counts"].get)
+        st.caption(f"Most common theme so far: {top_theme.title()}")
+
+    recent = profile["history"][:3]
+    if recent:
+        st.write("Recent sessions")
+        for item in recent:
+            st.markdown(
+                f"- {item['date']}: {item['dominant_theme'].title()} while working on {item['goal']}"
+            )
 
 
 def make_card_snapshot(card, reversed_state, position_label, card_number):
@@ -415,6 +545,7 @@ def render_action_plan_step():
 def render_wrap_up():
     reading = st.session_state.guided_reading
     inputs = st.session_state.guided_inputs
+    save_current_session()
     st.header("Step 5: Wrap-up", anchor=False, divider="rainbow")
     st.success(
         f"Dominant theme: {reading['dominant_theme'].title()}. Keep your next move small, visible, and tied to your goal."
@@ -481,6 +612,7 @@ if experience_mode == "Check Deck of Cards":
     render_deck_browser()
 else:
     render_progress_header()
+    render_progress_dashboard()
     step = st.session_state.journey_step
     if step == 0:
         render_check_in()
