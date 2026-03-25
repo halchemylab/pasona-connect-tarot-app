@@ -1,363 +1,500 @@
-import streamlit as st
-import random
-import time
 import copy
 import os
-from dotenv import load_dotenv
-import openai
+import random
+import time
 
-# --- App Configuration ---
+import openai
+import streamlit as st
+from dotenv import load_dotenv
+
+
 st.set_page_config(
     page_title="Pasona Connect Tarot App Demo",
     page_icon="🔮",
     layout="centered",
 )
 
-# --- Load environment variables and set OpenAI API key ---
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# --- Card Data ---
-# A clean, easily customizable data structure for the 10 cards.
+
 INITIAL_DECK = [
     {
         "title": "The Innovator",
         "emoji": "💡",
         "meaning": "A brilliant new idea will energize your work. Trust your sudden insights.",
-        "reversed_meaning": "You're experiencing creative block. Step away and seek new inspiration."
+        "reversed_meaning": "You're experiencing creative block. Step away and seek new inspiration.",
+        "theme": "creativity",
     },
     {
         "title": "The Collaborator",
         "emoji": "🤝",
         "meaning": "Your greatest success this week will come from teamwork. Reach out and connect.",
-        "reversed_meaning": "Teamwork is faltering. Address miscommunication or try working solo for a bit."
+        "reversed_meaning": "Teamwork is faltering. Address miscommunication or try working solo for a bit.",
+        "theme": "relationships",
     },
     {
         "title": "The Focus Master",
         "emoji": "🎯",
         "meaning": "Eliminate distractions. Deep, focused work on a single task will yield great results.",
-        "reversed_meaning": "Scattered attention is holding you back. Reassess your priorities."
+        "reversed_meaning": "Scattered attention is holding you back. Reassess your priorities.",
+        "theme": "focus",
     },
     {
         "title": "The Communicator",
         "emoji": "📣",
         "meaning": "Speak up. Your voice needs to be heard in an important meeting or discussion.",
-        "reversed_meaning": "Misunderstandings may arise. Listen carefully and clarify your message."
+        "reversed_meaning": "Misunderstandings may arise. Listen carefully and clarify your message.",
+        "theme": "communication",
     },
     {
         "title": "The Restful Achiever",
         "emoji": "🧘",
         "meaning": "Don't confuse activity with progress. Take a break; your best work will follow.",
-        "reversed_meaning": "Restlessness or burnout is near. Prioritize self-care and boundaries."
+        "reversed_meaning": "Restlessness or burnout is near. Prioritize self-care and boundaries.",
+        "theme": "wellbeing",
     },
     {
         "title": "The Bold Leader",
         "emoji": "🦁",
         "meaning": "An opportunity to lead or take ownership of a project will present itself. Seize it.",
-        "reversed_meaning": "Overconfidence or reluctance to lead may cause setbacks. Reflect before acting."
+        "reversed_meaning": "Overconfidence or reluctance to lead may cause setbacks. Reflect before acting.",
+        "theme": "leadership",
     },
     {
         "title": "The Student",
         "emoji": "📚",
         "meaning": "A skill you need to learn is holding you back. Dedicate time to learning it.",
-        "reversed_meaning": "Avoiding growth or ignoring feedback will stall your progress."
+        "reversed_meaning": "Avoiding growth or ignoring feedback will stall your progress.",
+        "theme": "growth",
     },
     {
         "title": "The Finisher",
         "emoji": "🏁",
         "meaning": "Stop starting and start finishing. Push that lingering project across the finish line.",
-        "reversed_meaning": "Procrastination or perfectionism is blocking completion. Let go and finish."
+        "reversed_meaning": "Procrastination or perfectionism is blocking completion. Let go and finish.",
+        "theme": "execution",
     },
     {
         "title": "The Networker",
         "emoji": "🌐",
         "meaning": "The solution to your problem lies with someone you haven't met yet. Expand your network.",
-        "reversed_meaning": "Networking efforts may feel forced or unproductive. Focus on genuine connections."
+        "reversed_meaning": "Networking efforts may feel forced or unproductive. Focus on genuine connections.",
+        "theme": "opportunity",
     },
     {
         "title": "The Organizer",
         "emoji": "🧹",
         "meaning": "Clarity comes from order. Tidy your workspace, organize your files, and plan your week.",
-        "reversed_meaning": "Disorganization is causing confusion. Take time to restore order."
+        "reversed_meaning": "Disorganization is causing confusion. Take time to restore order.",
+        "theme": "structure",
     },
 ]
 
-# --- State Management ---
-# Use st.session_state to initialize and persist the deck across reruns.
-def initialize_deck():
-    """Initializes or shuffles the deck in the session state."""
+SPREAD_LABELS = ["Past Influence", "Present Focus", "Future Potential"]
+JOURNEY_STEPS = [
+    "1. Check-in",
+    "2. Draw",
+    "3. Interpret",
+    "4. Action Plan",
+    "5. Wrap-up",
+]
+
+
+def initialize_app_state():
     if "deck" not in st.session_state:
-        # On first run, create a shuffled version of the deck.
-        shuffled_deck = copy.deepcopy(INITIAL_DECK)
-        random.shuffle(shuffled_deck)
-        st.session_state.deck = shuffled_deck
+        deck = copy.deepcopy(INITIAL_DECK)
+        random.shuffle(deck)
+        st.session_state.deck = deck
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = "light"
+    if "current_card_index" not in st.session_state:
+        st.session_state.current_card_index = 0
+    if "journey_step" not in st.session_state:
+        st.session_state.journey_step = 0
+    if "selected_seed_index" not in st.session_state:
+        st.session_state.selected_seed_index = None
+    if "guided_reading" not in st.session_state:
+        st.session_state.guided_reading = None
+    if "guided_inputs" not in st.session_state:
+        st.session_state.guided_inputs = {
+            "name": "",
+            "energy": 3,
+            "challenge": "",
+            "goal": "Build momentum on an important project",
+        }
 
-# --- UI Helper Functions ---
-def display_card(card, header="Your Card"):
-    """Displays a single card in a formatted, centered layout."""
+
+def reset_journey(reset_deck=False):
+    if reset_deck:
+        deck = copy.deepcopy(INITIAL_DECK)
+        random.shuffle(deck)
+        st.session_state.deck = deck
+    st.session_state.journey_step = 0
+    st.session_state.selected_seed_index = None
+    st.session_state.guided_reading = None
+
+
+def toggle_theme():
+    st.session_state.theme_mode = (
+        "dark" if st.session_state.theme_mode == "light" else "light"
+    )
+
+
+def make_card_snapshot(card, reversed_state, position_label, card_number):
+    return {
+        "title": card["title"],
+        "emoji": card["emoji"],
+        "meaning": card["meaning"],
+        "reversed_meaning": card["reversed_meaning"],
+        "theme": card["theme"],
+        "is_reversed": reversed_state,
+        "position_label": position_label,
+        "card_number": card_number,
+        "active_meaning": card["reversed_meaning"] if reversed_state else card["meaning"],
+    }
+
+
+def build_guided_reading(seed_index):
+    cards = []
+    for offset, label in enumerate(SPREAD_LABELS):
+        card_index = (seed_index + offset) % len(st.session_state.deck)
+        card = st.session_state.deck[card_index]
+        reversed_state = random.choices([False, True], weights=[2, 1])[0]
+        cards.append(
+            make_card_snapshot(
+                card=card,
+                reversed_state=reversed_state,
+                position_label=label,
+                card_number=card_index + 1,
+            )
+        )
+
+    inputs = st.session_state.guided_inputs
+    themes = [card["theme"] for card in cards]
+    theme_counts = {theme: themes.count(theme) for theme in set(themes)}
+    dominant_theme = max(theme_counts, key=theme_counts.get)
+
+    action_plan = [
+        f"Act on your {cards[1]['title']} message by scheduling one concrete move in the next 48 hours.",
+        f"Use the lesson from {cards[0]['title']} to avoid repeating an old pattern this week.",
+        f"Prepare for {cards[2]['title']} by writing down one visible outcome tied to your goal: {inputs['goal']}.",
+    ]
+
+    narrative = (
+        f"Your session starts with {cards[0]['title']}, which points to the recent pattern shaping your work mindset. "
+        f"{cards[1]['title']} is the center of gravity right now, suggesting the most useful response is to stay focused on what moves your goal forward. "
+        f"{cards[2]['title']} suggests where momentum can build next if you act with consistency instead of urgency."
+    )
+
+    reflection = (
+        f"You rated your energy at {inputs['energy']}/5 and named this challenge: '{inputs['challenge'] or 'No challenge entered'}'. "
+        f"The spread leans most strongly toward {dominant_theme}, so the strongest session takeaway is to align your next action with that theme."
+    )
+
+    return {
+        "cards": cards,
+        "dominant_theme": dominant_theme,
+        "narrative": narrative,
+        "reflection": reflection,
+        "action_plan": action_plan,
+    }
+
+
+def render_progress_header():
+    current_step = st.session_state.journey_step
+    progress = (current_step + 1) / len(JOURNEY_STEPS)
+    st.caption("Guided Career Session")
+    st.progress(progress)
+    st.write(" -> ".join(JOURNEY_STEPS))
+
+
+def render_card(card):
+    suffix = " (Reversed)" if card["is_reversed"] else ""
     with st.container(border=True):
-        st.header(header, anchor=False, divider="rainbow")
         st.markdown(
-            f"<p style='text-align: center; font-size: 80px;'>{card['emoji']}</p>",
+            f"<p style='text-align:center; font-size:64px; margin-bottom:0.1em;'>{card['emoji']}</p>",
             unsafe_allow_html=True,
         )
         st.markdown(
-            f"<h2 style='text-align: center;'>{card['title']}</h2>",
+            f"<h3 style='text-align:center; margin-bottom:0.2em;'>#{card['card_number']}: {card['title']}{suffix}</h3>",
             unsafe_allow_html=True,
         )
+        st.caption(card["position_label"])
+        st.info(card["active_meaning"])
 
-# --- Main App ---
 
-# Initialize the deck on the first run
-initialize_deck()
+def render_deck_browser():
+    st.header("Check Deck of Cards", anchor=False, divider="rainbow")
+    st.markdown(
+        """
+        <div style='margin-top: 0.5em; margin-bottom: 0.5em; font-weight: bold; font-size: 1.1em;'>
+            Browse all cards and their meanings below. Use the arrows to scroll.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    card = INITIAL_DECK[st.session_state.current_card_index]
+    st.markdown(
+        f"""
+        <div class='tarot-card' style='margin: 0 auto; max-width: 340px; background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%); border-radius: 18px; box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10); min-height: 320px; border: 2px solid #e0e0f0; padding: 0.5em 0.5em 0.7em 0.5em;'>
+            <div class='tarot-emoji' style='font-size: 3.5em; text-align: center; margin-top: 1.1em; margin-bottom: 0.2em;'>{card['emoji']}</div>
+            <div class='tarot-title' style='font-size: 1.25em; font-weight: 600; text-align: center; margin-bottom: 0.2em;'>{card['title']}</div>
+            <div class='tarot-meaning' style='font-size: 0.98em; color: #444; text-align: center; margin: 0.5em 0.7em 0.7em 0.7em;'>{card['meaning']}</div>
+            <div class='tarot-reversed' style='font-size: 0.92em; color: #888; text-align: center; margin: 0.2em 0.7em 0.7em 0.7em;'><b>Reversed:</b> {card['reversed_meaning']}</div>
+            <div style='text-align:center; margin-top:0.5em; color:#888;'>Card {st.session_state.current_card_index + 1} of {len(INITIAL_DECK)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    col1, _, col3 = st.columns([1, 2, 1])
+    with col1:
+        if (
+            st.button("⬅️", key="prev_card", use_container_width=True)
+            and st.session_state.current_card_index > 0
+        ):
+            st.session_state.current_card_index -= 1
+    with col3:
+        if (
+            st.button("➡️", key="next_card", use_container_width=True)
+            and st.session_state.current_card_index < len(INITIAL_DECK) - 1
+        ):
+            st.session_state.current_card_index += 1
 
-# --- Title, Name Input, and Introduction ---
+
+def render_check_in():
+    st.header("Step 1: Check-in", anchor=False, divider="rainbow")
+    inputs = st.session_state.guided_inputs
+    inputs["name"] = st.text_input(
+        "Name for the session (optional)",
+        value=inputs["name"],
+    )
+    inputs["energy"] = st.slider(
+        "How is your energy today?",
+        min_value=1,
+        max_value=5,
+        value=inputs["energy"],
+    )
+    inputs["goal"] = st.selectbox(
+        "What do you want help with most?",
+        [
+            "Build momentum on an important project",
+            "Improve communication at work",
+            "Get unstuck and regain focus",
+            "Think through a career change",
+            "Recover from burnout and reset",
+        ],
+        index=[
+            "Build momentum on an important project",
+            "Improve communication at work",
+            "Get unstuck and regain focus",
+            "Think through a career change",
+            "Recover from burnout and reset",
+        ].index(inputs["goal"]),
+    )
+    inputs["challenge"] = st.text_area(
+        "What feels most challenging right now?",
+        value=inputs["challenge"],
+        height=120,
+        placeholder="Example: I have too many half-finished tasks and I keep reacting instead of prioritizing.",
+    )
+    if st.button("Continue to Card Draw", type="primary", use_container_width=True):
+        st.session_state.journey_step = 1
+        st.rerun()
+
+
+def render_draw_step():
+    st.header("Step 2: Draw Your Starting Card", anchor=False, divider="rainbow")
+    st.write(
+        "Choose one card to start your session. The next two cards build the full story."
+    )
+    card_back_design = "🎴"
+    cols_top = st.columns(5)
+    cols_bottom = st.columns(5)
+    for i, col in enumerate(cols_top):
+        with col:
+            if st.button(
+                f"{card_back_design}\n{i + 1}",
+                key=f"guided_card_{i}",
+                use_container_width=True,
+            ):
+                st.session_state.selected_seed_index = i
+    for i, col in enumerate(cols_bottom):
+        with col:
+            if st.button(
+                f"{card_back_design}\n{i + 6}",
+                key=f"guided_card_{i + 5}",
+                use_container_width=True,
+            ):
+                st.session_state.selected_seed_index = i + 5
+
+    if st.session_state.selected_seed_index is not None:
+        st.success(
+            f"Starting card locked in at position #{st.session_state.selected_seed_index + 1}."
+        )
+        if st.button("Reveal the Session", type="primary", use_container_width=True):
+            time.sleep(0.8)
+            st.session_state.guided_reading = build_guided_reading(
+                st.session_state.selected_seed_index
+            )
+            st.session_state.journey_step = 2
+            st.rerun()
+
+
+def render_interpret_step():
+    reading = st.session_state.guided_reading
+    st.header("Step 3: Interpretation", anchor=False, divider="rainbow")
+    cols = st.columns(3)
+    for col, card in zip(cols, reading["cards"]):
+        with col:
+            render_card(card)
+
+    st.subheader("What the spread is saying", anchor=False)
+    st.write(reading["narrative"])
+    st.write(reading["reflection"])
+
+    if openai.api_key:
+        if st.button("Generate AI session recap", use_container_width=True):
+            ai_prompt = (
+                "You are a thoughtful career reflection coach. "
+                "Write a grounded 3-4 sentence recap for this guided tarot session.\n\n"
+                f"Goal: {st.session_state.guided_inputs['goal']}\n"
+                f"Challenge: {st.session_state.guided_inputs['challenge']}\n"
+                f"Energy: {st.session_state.guided_inputs['energy']}/5\n"
+                f"Cards: {', '.join([card['title'] + (' reversed' if card['is_reversed'] else '') for card in reading['cards']])}\n"
+                f"Narrative: {reading['narrative']}\n"
+            )
+            with st.spinner("Generating recap..."):
+                try:
+                    response = openai.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant."},
+                            {"role": "user", "content": ai_prompt},
+                        ],
+                        max_tokens=220,
+                        temperature=0.7,
+                    )
+                    st.success("AI recap")
+                    st.write(response.choices[0].message.content.strip())
+                except Exception as exc:
+                    st.error(f"AI recap failed: {exc}")
+
+    if st.button("Build My Action Plan", type="primary", use_container_width=True):
+        st.session_state.journey_step = 3
+        st.rerun()
+
+
+def render_action_plan_step():
+    reading = st.session_state.guided_reading
+    st.header("Step 4: Action Plan", anchor=False, divider="rainbow")
+    st.write(
+        "Turn the reading into something useful. Pick one action you will actually do."
+    )
+    for action in reading["action_plan"]:
+        st.markdown(f"- {action}")
+
+    st.text_area(
+        "Write your own next move",
+        key="user_next_move",
+        height=120,
+        placeholder="Example: Block 45 minutes tomorrow morning to finish the project outline and send it for feedback.",
+    )
+    st.text_area(
+        "Optional note to future you",
+        key="future_note",
+        height=100,
+        placeholder="What do you want to remember from this session next week?",
+    )
+
+    if st.button("Finish Session", type="primary", use_container_width=True):
+        st.session_state.journey_step = 4
+        st.rerun()
+
+
+def render_wrap_up():
+    reading = st.session_state.guided_reading
+    inputs = st.session_state.guided_inputs
+    st.header("Step 5: Wrap-up", anchor=False, divider="rainbow")
+    st.success(
+        f"Dominant theme: {reading['dominant_theme'].title()}. Keep your next move small, visible, and tied to your goal."
+    )
+    session_name = inputs["name"].strip() or "Your"
+    share_text = (
+        f"{session_name} guided tarot session\n"
+        f"Goal: {inputs['goal']}\n"
+        f"Challenge: {inputs['challenge'] or 'Not provided'}\n"
+        f"Cards: {', '.join([card['title'] + (' reversed' if card['is_reversed'] else '') for card in reading['cards']])}\n"
+        f"Takeaway: {reading['narrative']}\n"
+        f"Next move: {st.session_state.get('user_next_move', '').strip() or reading['action_plan'][0]}"
+    )
+    st.text_area("Session summary", value=share_text, height=220)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start a New Session", use_container_width=True):
+            reset_journey(reset_deck=True)
+            st.rerun()
+    with col2:
+        if st.button("Reflect on the Cards Again", use_container_width=True):
+            st.session_state.journey_step = 2
+            st.rerun()
+
+
+initialize_app_state()
+
 st.title("✨ :rainbow[Pasona Connect] Tarot App Demo")
-
-# Name input for personalization
-name = st.text_input("Enter your name for a personalized reading (optional):", "")
-
 st.markdown(
-    "Get a little dose of fun, lighthearted career advice. "
-    "Designed specifically for Pasona Connect! "
-    "Pick a number from 1 to 10 to draw your card for the day."
+    "A playful career reflection app with a longer guided flow. Check in, draw a spread, "
+    "interpret the message, and leave with a next step."
 )
 st.divider()
 
-# --- Controls in the Sidebar ---
 with st.sidebar:
     st.header("✨ Controls")
-
-    # --- Reset Button ---
-    if st.button("Reset App", use_container_width=True):
-        st.success("App is resetting...")
-        time.sleep(0.5)
-        st.rerun()
-
-    # The Shuffle button reruns the shuffling logic for the session_state deck
-    if st.button("Shuffle Deck", use_container_width=True):
-        shuffled_deck = copy.deepcopy(INITIAL_DECK)
-        random.shuffle(shuffled_deck)
-        st.session_state.deck = shuffled_deck
-        # Reset all relevant session state variables for a true app reset
-        st.session_state.chosen_card_index = -1
-        st.session_state.show_share = False
-        st.session_state.last_share_btn = False
-        st.success("The deck has been shuffled and the app has been reset!")
-        time.sleep(1) # a little pause to let the user see the message
-        st.rerun()
-
-    # --- Toggle Light/Dark Mode Button ---
-    if "theme_mode" not in st.session_state:
-        st.session_state.theme_mode = "light"
-    if st.button(f"Toggle Light/Dark Mode", use_container_width=True):
-        st.session_state.theme_mode = "dark" if st.session_state.theme_mode == "light" else "light"
-        st.info(f"Theme toggled to {st.session_state.theme_mode.title()}! To change the theme, go to the Streamlit settings (top right menu). Programmatic theme switching is not supported in Streamlit as of June 2025.")
-
-    st.markdown("---")
-    reading_type = st.radio(
-        "Choose your reading:",
-        ("Single Card Draw", "3-Card Career Reading", "Check Deck of Cards"),
-        captions=("Quick daily insight.", "Past, Present, and Future outlook.", "Browse all cards and their meanings.")
+    experience_mode = st.radio(
+        "Choose a mode:",
+        ("Guided Career Session", "Check Deck of Cards"),
+        captions=(
+            "A longer reflective experience with five steps.",
+            "Browse the full deck and meanings.",
+        ),
     )
 
-# --- Main Interaction Area ---
-if reading_type == "Check Deck of Cards":
-    st.header("Check Deck of Cards", anchor=False, divider="rainbow")
-    st.markdown("""
-    <div style='margin-top: 0.5em; margin-bottom: 0.5em; font-weight: bold; font-size: 1.1em;'>
-        Browse all cards and their meanings below. Use the arrows to scroll!
-    </div>
-    """, unsafe_allow_html=True)
-    if "current_card_index" not in st.session_state:
-        st.session_state.current_card_index = 0
-    card = INITIAL_DECK[st.session_state.current_card_index]
-    st.markdown(f"""
-    <div class='tarot-card' style='margin: 0 auto; max-width: 340px; background: linear-gradient(135deg, #fff 70%, #f0f0ff 100%); border-radius: 18px; box-shadow: 0 2px 12px 0 rgba(80,80,120,0.10); min-height: 320px; border: 2px solid #e0e0f0; padding: 0.5em 0.5em 0.7em 0.5em;'>
-        <div class='tarot-emoji' style='font-size: 3.5em; text-align: center; margin-top: 1.1em; margin-bottom: 0.2em;'>{card['emoji']}</div>
-        <div class='tarot-title' style='font-size: 1.25em; font-weight: 600; text-align: center; margin-bottom: 0.2em;'>{card['title']}</div>
-        <div class='tarot-meaning' style='font-size: 0.98em; color: #444; text-align: center; margin: 0.5em 0.7em 0.7em 0.7em;'>{card['meaning']}</div>
-        <div class='tarot-reversed' style='font-size: 0.92em; color: #888; text-align: center; margin: 0.2em 0.7em 0.7em 0.7em;'><b>Reversed:</b> {card['reversed_meaning']}</div>
-        <div style='text-align:center; margin-top:0.5em; color:#888;'>Card {st.session_state.current_card_index+1} of {len(INITIAL_DECK)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1,2,1])
-    with col1:
-        if st.button("⬅️", key="prev_card", use_container_width=True) and st.session_state.current_card_index > 0:
-            st.session_state.current_card_index -= 1
-    with col3:
-        if st.button("➡️", key="next_card", use_container_width=True) and st.session_state.current_card_index < len(INITIAL_DECK)-1:
-            st.session_state.current_card_index += 1
+    if st.button("Reset Session", use_container_width=True):
+        reset_journey(reset_deck=False)
+        st.rerun()
+
+    if st.button("Shuffle Deck", use_container_width=True):
+        reset_journey(reset_deck=True)
+        st.success("The deck has been shuffled.")
+        time.sleep(0.6)
+        st.rerun()
+
+    if st.button("Toggle Light/Dark Mode", use_container_width=True):
+        toggle_theme()
+        st.info(
+            f"Theme toggled to {st.session_state.theme_mode.title()}. Streamlit theme changes still depend on Streamlit settings."
+        )
+
+if experience_mode == "Check Deck of Cards":
+    render_deck_browser()
 else:
-    # --- Main Interaction Area ---
-    st.subheader("Click a Card to Draw Your Reading", anchor=False)
+    render_progress_header()
+    step = st.session_state.journey_step
+    if step == 0:
+        render_check_in()
+    elif step == 1:
+        render_draw_step()
+    elif step == 2:
+        render_interpret_step()
+    elif step == 3:
+        render_action_plan_step()
+    else:
+        render_wrap_up()
 
-    card_backs_cols = st.columns(5)
-    card_back_design = "🎴"
-
-    # Use session_state to persist chosen card index
-    if "chosen_card_index" not in st.session_state:
-        st.session_state.chosen_card_index = -1
-
-    # First row (cards 1-5)
-    for i, col in enumerate(card_backs_cols):
-        with col:
-            card_number = i + 1
-            if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i}", use_container_width=True):
-                st.session_state.chosen_card_index = i
-
-    # Second row (cards 6-10)
-    card_backs_cols_2 = st.columns(5)
-    for i, col in enumerate(card_backs_cols_2):
-        with col:
-            card_number = i + 6
-            if st.button(f"{card_back_design}\n{card_number}", key=f"card_{i+5}", use_container_width=True):
-                st.session_state.chosen_card_index = i + 5
-
-    # --- Card Drawing Logic ---
-    if st.session_state.chosen_card_index != -1:
-        display_name = name.strip() if name.strip() else "there"
-        time.sleep(1.0)
-        seed_index = st.session_state.chosen_card_index
-
-        # --- Single Card Reading ---
-        if reading_type == "Single Card Draw":
-            placeholder = st.empty()  # Create an empty container for the animation
-
-            # 1. Show the card back
-            with placeholder.container(border=True):
-                st.markdown("<p style='text-align: center; font-size: 150px; line-height: 1.2;'>🎴</p>", unsafe_allow_html=True)
-                st.markdown(f"<h3 style='text-align: center;'>Your Card</h3>", unsafe_allow_html=True)
-
-            time.sleep(3)  # Pause on the card back for 3 seconds
-            st.balloons()
-
-            # 2. "Flip" the card by replacing the placeholder's content
-            drawn_card = st.session_state.deck[seed_index]
-            # 2/3 chance for normal, 1/3 for reversed
-            is_reversed = random.choices([False, True], weights=[2, 1])[0]
-            card_number = seed_index + 1
-            with placeholder.container(border=True):
-                # Personalize the card header with the user's name if provided
-                card_owner = f"{display_name}'s Card" if display_name.lower() != "there" else "Your Card"
-                if is_reversed:
-                    st.header(f"{card_owner} (Reversed) — #{card_number}", anchor=False, divider="rainbow")
-                    st.markdown(f"<span class='tarot-emoji' style='font-size: 80px; display: flex; justify-content: center; align-items: center; width: 100%; text-align: center;'>{drawn_card['emoji']}</span>", unsafe_allow_html=True)
-                    st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
-                    st.info(f"**Reversed Meaning:** {drawn_card['reversed_meaning']}")
-                else:
-                    st.header(f"{card_owner} — #{card_number}", anchor=False, divider="rainbow")
-                    st.markdown(f"<span class='tarot-emoji' style='font-size: 80px; display: flex; justify-content: center; align-items: center; width: 100%; text-align: center;'>{drawn_card['emoji']}</span>", unsafe_allow_html=True)
-                    st.markdown(f"<h2 style='text-align: center;'>#{card_number}: {drawn_card['title']}</h2>", unsafe_allow_html=True)
-                    st.info(f"**Meaning:** {drawn_card['meaning']}")
-
-            # --- Share to Teams Button ---
-            st.divider()
-            reading_text = f"""🔮 My Pasona Tarot Reading for {display_name}:
-**{drawn_card['title']}** {drawn_card['emoji']}
-*_{drawn_card['reversed_meaning'] if is_reversed else drawn_card['meaning']}_*
-"""
-            # Make the share section hidable with persistent state
-            if "show_share" not in st.session_state:
-                st.session_state.show_share = False
-            if "last_share_btn" not in st.session_state:
-                st.session_state.last_share_btn = False
-            share_btn = st.button(
-                "Show shareable reading text" if not st.session_state.show_share else "Hide shareable reading text",
-                key="toggle_share_btn"
-            )
-            if share_btn and not st.session_state.last_share_btn:
-                st.session_state.show_share = not st.session_state.show_share
-            st.session_state.last_share_btn = share_btn
-            if st.session_state.show_share:
-                st.text_area("Copy this to share your reading!", reading_text, height=150)
-
-        # --- 3-Card Reading ---
-        elif reading_type == "3-Card Career Reading":
-            display_name = name.strip() if name.strip() else ""
-            if display_name:
-                st.header(f"{display_name}'s Career Reading", anchor=False, divider="rainbow")
-            else:
-                st.header("Your Career Reading", anchor=False, divider="rainbow")
-            # Draw 3 cards sequentially from the seeded position, wrapping around if needed
-            card1_index = seed_index
-            card2_index = (seed_index + 1) % 10 # Modulo for wrapping around the deck
-            card3_index = (seed_index + 2) % 10
-
-            card1 = st.session_state.deck[card1_index]
-            card2 = st.session_state.deck[card2_index]
-            card3 = st.session_state.deck[card3_index]
-
-            # Decide reversed state for each card
-            # 2/3 chance for normal, 1/3 for reversed for each card
-            reversed1 = random.choices([False, True], weights=[2, 1])[0]
-            reversed2 = random.choices([False, True], weights=[2, 1])[0]
-            reversed3 = random.choices([False, True], weights=[2, 1])[0]
-
-            # Bonus: Use st.columns for a clean side-by-side layout
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                st.markdown("<h4 style='text-align: center;'>Past Influence</h4>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card1['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h5 style='text-align: center;'>{card1['title']}{' (Reversed)' if reversed1 else ''}</h5>", unsafe_allow_html=True)
-                if reversed1:
-                    st.info(f"**Reversed Meaning:** {card1['reversed_meaning']}")
-                else:
-                    st.info(f"**Meaning:** {card1['meaning']}")
-
-            with col2:
-                st.markdown("<h4 style='text-align: center;'>Present Focus</h4>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card2['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h5 style='text-align: center;'>{card2['title']}{' (Reversed)' if reversed2 else ''}</h5>", unsafe_allow_html=True)
-                if reversed2:
-                    st.info(f"**Reversed Meaning:** {card2['reversed_meaning']}")
-                else:
-                    st.info(f"**Meaning:** {card2['meaning']}")
-
-            with col3:
-                st.markdown("<h4 style='text-align: center;'>Future Potential</h4>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; font-size: 60px;'>{card3['emoji']}</p>", unsafe_allow_html=True)
-                st.markdown(f"<h5 style='text-align: center;'>{card3['title']}{' (Reversed)' if reversed3 else ''}</h5>", unsafe_allow_html=True)
-                if reversed3:
-                    st.info(f"**Reversed Meaning:** {card3['reversed_meaning']}")
-                else:
-                    st.info(f"**Meaning:** {card3['meaning']}")
-
-            # --- AI Explanation Section ---
-            if openai.api_key:
-                ai_prompt = (
-                    f"""
-You are a career coach tarot expert. Given the following 3-card tarot reading, craft a cohesive, insightful narrative (2-4 sentences) that weaves together the cards' meanings into a single story about the user's career journey. Avoid repeating phrases and ensure the explanation feels unified and encouraging.
-
-Past Influence: {card1['title']} ({'Reversed' if reversed1 else 'Upright'}) - {card1['reversed_meaning'] if reversed1 else card1['meaning']}
-Present Focus: {card2['title']} ({'Reversed' if reversed2 else 'Upright'}) - {card2['reversed_meaning'] if reversed2 else card2['meaning']}
-Future Potential: {card3['title']} ({'Reversed' if reversed3 else 'Upright'}) - {card3['reversed_meaning'] if reversed3 else card3['meaning']}
-                    """
-                )
-                if st.button("Get AI Career Explanation", key="ai_explain_btn"):
-                    with st.spinner("Asking the AI for your career insight..."):
-                        try:
-                            response = openai.chat.completions.create(
-                                model="gpt-4o",
-                                messages=[
-                                    {"role": "system", "content": "You are a helpful assistant."},
-                                    {"role": "user", "content": ai_prompt}
-                                ],
-                                max_tokens=200,
-                                temperature=0.7,
-                            )
-                            ai_text = response.choices[0].message.content.strip()
-                            st.success("AI Career Explanation:")
-                            st.write(ai_text)
-                        except Exception as e:
-                            st.error(f"AI explanation failed: {e}")
-            else:
-                st.info("Add your OpenAI API key to the .env file to enable AI explanations.")
-
-# --- Main Interaction Area ---
-# Inject custom CSS for glowing border, scale on hover, and animated emoji bounce
-st.markdown('''
+st.markdown(
+    """
     <style>
     .tarot-card {
         transition: box-shadow 0.3s, border-color 0.3s, transform 0.25s cubic-bezier(.25,.8,.25,1);
@@ -383,4 +520,6 @@ st.markdown('''
         100% { transform: translateY(0); }
     }
     </style>
-''', unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
