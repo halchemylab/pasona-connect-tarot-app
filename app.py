@@ -104,6 +104,53 @@ JOURNEY_STEPS = [
 ]
 DATA_DIR = Path("data")
 PROGRESS_FILE = DATA_DIR / "user_progress.json"
+CAREER_CONTEXTS = {
+    "Project Momentum": {
+        "intro": "You want traction and visible progress.",
+        "focus_prompt": "What one deliverable would make this week feel real?",
+        "reflection_questions": [
+            "What is the smallest shippable next step?",
+            "What distraction needs to be cut this week?",
+        ],
+        "action_hint": "Ship progress that another person can see.",
+    },
+    "Team Friction": {
+        "intro": "You are trying to navigate tension, alignment, or trust.",
+        "focus_prompt": "What conversation have you been avoiding?",
+        "reflection_questions": [
+            "Where do you need more clarity before reacting?",
+            "What would a calm, direct conversation sound like?",
+        ],
+        "action_hint": "Replace assumption with one direct conversation.",
+    },
+    "Promotion Readiness": {
+        "intro": "You want to show leadership, impact, and readiness for more scope.",
+        "focus_prompt": "What evidence of impact can you make more visible?",
+        "reflection_questions": [
+            "Which strength should become more visible this month?",
+            "What leadership behavior can you practice before the title changes?",
+        ],
+        "action_hint": "Document impact and make it easy for others to see.",
+    },
+    "Burnout Reset": {
+        "intro": "You need recovery, boundaries, and a more sustainable pace.",
+        "focus_prompt": "What is draining you faster than it should?",
+        "reflection_questions": [
+            "What boundary would lower your stress immediately?",
+            "What can you pause without real cost?",
+        ],
+        "action_hint": "Protect energy before asking for more output.",
+    },
+    "Career Change": {
+        "intro": "You are weighing a bigger shift in role, team, or direction.",
+        "focus_prompt": "What are you moving toward, not just away from?",
+        "reflection_questions": [
+            "What experiment would reduce uncertainty this month?",
+            "What skill or signal would make the next move easier?",
+        ],
+        "action_hint": "Run a small experiment before making a big leap.",
+    },
+}
 
 
 def initialize_app_state():
@@ -127,6 +174,7 @@ def initialize_app_state():
             "energy": 3,
             "challenge": "",
             "goal": "Build momentum on an important project",
+            "context": "Project Momentum",
         }
     if "reading_saved" not in st.session_state:
         st.session_state.reading_saved = False
@@ -232,6 +280,7 @@ def save_current_session():
         {
             "date": session_day,
             "goal": st.session_state.guided_inputs["goal"],
+            "context": st.session_state.guided_inputs["context"],
             "challenge": st.session_state.guided_inputs["challenge"],
             "dominant_theme": theme,
             "cards": [
@@ -266,8 +315,9 @@ def render_progress_dashboard():
     if recent:
         st.write("Recent sessions")
         for item in recent:
+            item_context = item.get("context", "General")
             st.markdown(
-                f"- {item['date']}: {item['dominant_theme'].title()} while working on {item['goal']}"
+                f"- {item['date']}: {item_context} / {item['dominant_theme'].title()} while working on {item['goal']}"
             )
 
 
@@ -301,33 +351,37 @@ def build_guided_reading(seed_index):
         )
 
     inputs = st.session_state.guided_inputs
+    context = CAREER_CONTEXTS[inputs["context"]]
     themes = [card["theme"] for card in cards]
     theme_counts = {theme: themes.count(theme) for theme in set(themes)}
     dominant_theme = max(theme_counts, key=theme_counts.get)
 
     action_plan = [
-        f"Act on your {cards[1]['title']} message by scheduling one concrete move in the next 48 hours.",
+        f"{context['action_hint']} Use {cards[1]['title']} as the lens for your next 48 hours.",
         f"Use the lesson from {cards[0]['title']} to avoid repeating an old pattern this week.",
         f"Prepare for {cards[2]['title']} by writing down one visible outcome tied to your goal: {inputs['goal']}.",
     ]
 
     narrative = (
-        f"Your session starts with {cards[0]['title']}, which points to the recent pattern shaping your work mindset. "
+        f"For the context of {inputs['context']}, your session starts with {cards[0]['title']}, which points to the recent pattern shaping your work mindset. "
         f"{cards[1]['title']} is the center of gravity right now, suggesting the most useful response is to stay focused on what moves your goal forward. "
         f"{cards[2]['title']} suggests where momentum can build next if you act with consistency instead of urgency."
     )
 
     reflection = (
         f"You rated your energy at {inputs['energy']}/5 and named this challenge: '{inputs['challenge'] or 'No challenge entered'}'. "
-        f"The spread leans most strongly toward {dominant_theme}, so the strongest session takeaway is to align your next action with that theme."
+        f"{context['intro']} The spread leans most strongly toward {dominant_theme}, so the strongest session takeaway is to align your next action with that theme."
     )
 
     return {
         "cards": cards,
+        "context": inputs["context"],
         "dominant_theme": dominant_theme,
         "narrative": narrative,
         "reflection": reflection,
         "action_plan": action_plan,
+        "reflection_questions": context["reflection_questions"],
+        "focus_prompt": context["focus_prompt"],
     }
 
 
@@ -422,6 +476,13 @@ def render_check_in():
             "Recover from burnout and reset",
         ].index(inputs["goal"]),
     )
+    inputs["context"] = st.selectbox(
+        "Which situation fits this session?",
+        list(CAREER_CONTEXTS.keys()),
+        index=list(CAREER_CONTEXTS.keys()).index(inputs["context"]),
+        help="This changes the interpretation tone and the follow-up coaching prompts.",
+    )
+    st.caption(CAREER_CONTEXTS[inputs["context"]]["focus_prompt"])
     inputs["challenge"] = st.text_area(
         "What feels most challenging right now?",
         value=inputs["challenge"],
@@ -480,6 +541,7 @@ def render_interpret_step():
             render_card(card)
 
     st.subheader("What the spread is saying", anchor=False)
+    st.caption(f"Context: {reading['context']}")
     st.write(reading["narrative"])
     st.write(reading["reflection"])
 
@@ -488,6 +550,7 @@ def render_interpret_step():
             ai_prompt = (
                 "You are a thoughtful career reflection coach. "
                 "Write a grounded 3-4 sentence recap for this guided tarot session.\n\n"
+                f"Context: {reading['context']}\n"
                 f"Goal: {st.session_state.guided_inputs['goal']}\n"
                 f"Challenge: {st.session_state.guided_inputs['challenge']}\n"
                 f"Energy: {st.session_state.guided_inputs['energy']}/5\n"
@@ -521,8 +584,12 @@ def render_action_plan_step():
     st.write(
         "Turn the reading into something useful. Pick one action you will actually do."
     )
+    st.caption(reading["focus_prompt"])
     for action in reading["action_plan"]:
         st.markdown(f"- {action}")
+    st.write("Reflection prompts")
+    for question in reading["reflection_questions"]:
+        st.markdown(f"- {question}")
 
     st.text_area(
         "Write your own next move",
@@ -553,6 +620,7 @@ def render_wrap_up():
     session_name = inputs["name"].strip() or "Your"
     share_text = (
         f"{session_name} guided tarot session\n"
+        f"Context: {reading['context']}\n"
         f"Goal: {inputs['goal']}\n"
         f"Challenge: {inputs['challenge'] or 'Not provided'}\n"
         f"Cards: {', '.join([card['title'] + (' reversed' if card['is_reversed'] else '') for card in reading['cards']])}\n"
