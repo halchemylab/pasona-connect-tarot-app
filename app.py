@@ -546,32 +546,62 @@ def render_interpret_step():
     st.write(reading["reflection"])
 
     if openai.api_key:
-        if st.button("Generate AI session recap", use_container_width=True):
+        st.subheader("AI coaching assist", anchor=False)
+        st.caption(
+            "Generate concrete next steps and a reusable message draft based on this spread."
+        )
+        if st.button("Generate AI action coach", use_container_width=True):
             ai_prompt = (
-                "You are a thoughtful career reflection coach. "
-                "Write a grounded 3-4 sentence recap for this guided tarot session.\n\n"
+                "You are a thoughtful career coach. Use the tarot reading only as a reflection lens, "
+                "then turn it into practical output.\n\n"
+                "Return plain text using exactly these sections and labels:\n"
+                "Situation:\n"
+                "Priority:\n"
+                "Next steps:\n"
+                "- ...\n"
+                "- ...\n"
+                "- ...\n"
+                "Message draft:\n"
+                "...\n\n"
+                "Requirements:\n"
+                "- Keep Situation to 2 sentences max.\n"
+                "- Keep Priority to 1 sentence.\n"
+                "- Each next step must be specific, realistic, and doable within 1 week.\n"
+                "- The message draft must be 3-5 sentences and usable for a manager, teammate, or mentor.\n"
+                "- Ground the advice in the user's context, challenge, energy level, and cards.\n"
+                "- Avoid mystical language and avoid repeating the narrative verbatim.\n\n"
                 f"Context: {reading['context']}\n"
                 f"Goal: {st.session_state.guided_inputs['goal']}\n"
-                f"Challenge: {st.session_state.guided_inputs['challenge']}\n"
+                f"Challenge: {st.session_state.guided_inputs['challenge'] or 'Not provided'}\n"
                 f"Energy: {st.session_state.guided_inputs['energy']}/5\n"
+                f"Dominant theme: {reading['dominant_theme']}\n"
                 f"Cards: {', '.join([card['title'] + (' reversed' if card['is_reversed'] else '') for card in reading['cards']])}\n"
                 f"Narrative: {reading['narrative']}\n"
+                f"Reflection: {reading['reflection']}\n"
+                f"Current action plan ideas: {' | '.join(reading['action_plan'])}\n"
             )
-            with st.spinner("Generating recap..."):
+            with st.spinner("Generating action coach..."):
                 try:
                     response = openai.chat.completions.create(
                         model="gpt-4o",
                         messages=[
-                            {"role": "system", "content": "You are a helpful assistant."},
+                            {
+                                "role": "system",
+                                "content": "You convert reflection into practical career coaching.",
+                            },
                             {"role": "user", "content": ai_prompt},
                         ],
-                        max_tokens=220,
+                        max_tokens=420,
                         temperature=0.7,
                     )
-                    st.success("AI recap")
-                    st.write(response.choices[0].message.content.strip())
+                    st.success("AI action coach")
+                    st.text_area(
+                        "Personalized coaching output",
+                        value=response.choices[0].message.content.strip(),
+                        height=320,
+                    )
                 except Exception as exc:
-                    st.error(f"AI recap failed: {exc}")
+                    st.error(f"AI coaching failed: {exc}")
 
     if st.button("Build My Action Plan", type="primary", use_container_width=True):
         st.session_state.journey_step = 3
